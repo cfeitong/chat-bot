@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block QAForm %}
+<form action="/submit_question" method="post">
+  <div id="node1">
+    <div class="form-group">
+      <span class="input-group-addon">Question</span>
+      <textarea type="text" class="form-control" id="questionInput" name="question" rows=8></textarea>
+      <span class="input-group-addon">Answer</span>
+      <textarea type="text" class="form-control" id="answerInput" name="answer" rows=8></textarea>
+      <span class="input-group-addon">Date</span>
+      <input id="dateInput" type="date" name="date" class="form-control">
+      <span class="input-group-addon">Tags</span>
+      <input id="tagsInput" name="tags" class="form-control" placeholder="space seperated tags">
+      <button type="submit" id="addAnswer" class="btn btn-primary btn-block">submit</button>
+    </div>
+  </div>
+</form>
+<script>
+  Date.prototype.toDateInputValue = (function () {
+    var local = new Date(this);
+    local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+    return local.toJSON().slice(0, 10);
+  });
+  document.getElementById("dateInput").value = new Date().toDateInputValue();
+
+</script>
+{% endblock %}
