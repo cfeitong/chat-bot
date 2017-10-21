@@ -32,3 +32,7 @@ def submit_question():
 api.add_resource(QAList, '/qalist')
 api.add_resource(QAEntry, '/qalist/<int:id_>')
 api.add_resource(Ask, '/ask')
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
