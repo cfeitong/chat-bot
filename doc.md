@@ -22,6 +22,17 @@
     }
     ```
 
+### URL: /login
+
+- *get*
+  返回生成的userid, 格式为json
+  样例:
+  ```javascript
+  {
+      "userid": 123
+  }
+  ```
+
 ### URL: /qalist/\<id_\>
 
 - *get*

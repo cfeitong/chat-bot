@@ -1,12 +1,12 @@
 from db import db
 from similarity import QuestionSet
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 DataEntry = namedtuple("DataEntry", ["id", "question"])
 
 class ChatSession(object):
     def __init__(self):
-        self.context = {}
+        self.context = defaultdict(lambda: [])
 
     def __len__(self):
         return len(self.context)
@@ -16,9 +16,16 @@ class ChatSession(object):
 
     def apply_id(self):
         id_ = 1
-        while id_ in self.context.keys():
+        while id_ in self.context:
             id_ += 1
         return id_
+
+    def delete_id(self, userid):
+        if userid in self.context:
+            del self.context[userid]
+
+    def add_question(self, question, userid):
+        self.context[userid].append(question)
 
 
 

@@ -5,7 +5,7 @@ from flask import Flask, redirect, render_template, request, url_for
 from flask_restful import Api, Resource
 
 from db import db
-from question import search_question
+from question import search_question, sess
 
 
 class Ask(Resource):
@@ -18,6 +18,7 @@ class Ask(Resource):
             return "", 204
         if userid is None:
             return "", 401
+        sess.add_question(question, userid)
         return {"answer": record["answer"]}
 
 

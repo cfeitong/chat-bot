@@ -9,6 +9,8 @@ from flask_restful import Api
 
 from db import db
 
+import json
+
 app = Flask(__name__)
 api = Api(app)
 
@@ -32,12 +34,17 @@ def submit_question():
 
 @app.route("/login", methods=["GET"])
 def login():
-    return {"userid": sess.apply_id()}
+    return json.dumps({"userid": sess.apply_id()})
 
 
 @app.route("/logout", methods=["GET"])
 def logout():
-    pass
+    args = request.args
+    userid = args.get("userid", None)
+    if userid is None:
+        return "", 401
+    sess.delete_id(userid)
+    return "", 200
 
 
 api.add_resource(QAList, '/qalist')
