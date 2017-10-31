@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from resource import Ask, QAEntry, QAList
+from question import sess
 
 from flask import Flask, redirect, render_template, request, url_for
 from flask_restful import Api
@@ -13,7 +14,7 @@ api = Api(app)
 
 
 @app.route('/')
-def hello():
+def qaform():
     return render_template('QAForm.html')
 
 
@@ -27,6 +28,16 @@ def submit_question():
     db.insert(question, answer, date, tags)
     db.commit()
     return redirect(url_for('hello'))
+
+
+@app.route("/login", methods=["GET"])
+def login():
+    return {"userid": sess.apply_id()}
+
+
+@app.route("/logout", methods=["GET"])
+def logout():
+    pass
 
 
 api.add_resource(QAList, '/qalist')

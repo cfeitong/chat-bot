@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 
 from flask import Flask, redirect, render_template, request, url_for
 from flask_restful import Api, Resource
@@ -10,11 +11,14 @@ from question import search_question
 class Ask(Resource):
     def get(self):
         args = request.args
-        question = args.get('question', None)
+        question = args.get("question", None)
+        userid = args.get("userid", None)
         record = search_question(question)
         if record is None:
-            return '', 204
-        return record['answer']
+            return "", 204
+        if userid is None:
+            return "", 401
+        return {"answer": record["answer"]}
 
 
 class QAList(Resource):
@@ -22,14 +26,14 @@ class QAList(Resource):
         return list(db.records.keys()), 200
 
     def put(self):
-        entry = json.loads(request.form['entry'])
-        question = entry.get('question', '')
-        answer = entry.get('answer', '')
-        date = entry.get('date', '')
-        tags = entry.get('tags', '')
+        entry = json.loads(request.form["entry"])
+        question = entry.get("question", "")
+        answer = entry.get("answer", "")
+        date = entry.get("date", "")
+        tags = entry.get("tags", "")
         db.insert(question, answer, date, tags)
         db.commit()
-        return '', 200
+        return "", 200
 
 
 class QAEntry(Resource):
@@ -40,11 +44,11 @@ class QAEntry(Resource):
             return '', 204
 
     def put(self, id_):
-        entry = json.loads(request.form['entry'])
-        question = entry.get('question', None)
-        answer = entry.get('answer',   None)
-        date = entry.get('date',     None)
-        tags = entry.get('tags',     None)
+        entry = json.loads(request.form["entry"])
+        question = entry.get("question", None)
+        answer = entry.get("answer",   None)
+        date = entry.get("date",     None)
+        tags = entry.get("tags",     None)
         try:
             record = db[id_]
             if question is not None:
@@ -59,12 +63,12 @@ class QAEntry(Resource):
             db.insert(question, answer, date, tags)
 
         db.commit()
-        return '', 200
+        return "", 200
 
     def delete(self, id_):
         try:
             del db[id_]
             db.commit()
         except KeyError:
-            return '', 204
-        return '', 200
+            return "", 204
+        return "", 200

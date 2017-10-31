@@ -40,7 +40,7 @@
 
   如果id_不存在，返回204。
 
-### URL:/qsk?question='...'
+### URL:/ask?question='...'
 
 - get
 

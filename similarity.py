@@ -9,7 +9,6 @@ class QuestionSet(object):
         """\
         :param data: (list[NamedTuple]) list of questions ans answers
         """
-        print(data)
         self.data = data
         self.question_tokens = []
         for entry in data:
@@ -43,12 +42,15 @@ def _distance(question_vec0, question_vec1):
     :return: distance between question vectors
     :rtype: double
     """
-    # to avoid all zeros situation
-    question_vec0 += 0.1
-    question_vec1 += 0.1
 
-    q0_norm = question_vec0 / linalg.norm(question_vec0)
-    q1_norm = question_vec1 / linalg.norm(question_vec1)
+    q0_norm = question_vec0
+    q1_norm = question_vec1
+
+    if np.sum(np.abs(question_vec0)):
+        q0_norm = question_vec0 / linalg.norm(question_vec0)
+    if np.sum(np.abs(question_vec1)):
+        q1_norm = question_vec1 / linalg.norm(question_vec1)
+
     delta = q0_norm - q1_norm
     return np.sum(np.abs(delta))
 
