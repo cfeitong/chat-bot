@@ -4,6 +4,9 @@ from scipy import linalg
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
+jieba.load_userdict("userdict.txt")
+
+
 class QuestionSet(object):
     def __init__(self, data):
         """\
@@ -12,7 +15,7 @@ class QuestionSet(object):
         self.data = data
         self.question_tokens = []
         for entry in data:
-            self.question_tokens.append(" ".join(jieba.cut(entry.question)))
+            self.question_tokens.append(" ".join(jieba.cut_for_search(entry.question)))
 
         with open("stopwords.txt", "rb") as f:
             stopwords = f.read().decode("utf-8")
@@ -26,7 +29,7 @@ class QuestionSet(object):
         :return: answers sorted by possibility whether correct
         :rtype: list[string]
         """
-        tokens = " ".join(jieba.cut(question))
+        tokens = " ".join(jieba.cut_for_search(question))
         vec0 = self.vectorizer.transform([tokens]).toarray()[0]
         distances = [_distance(vec0, vec1)
                      for vec1 in self.vectorizer.transform(self.question_tokens).toarray()]
