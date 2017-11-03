@@ -16,9 +16,8 @@ class Ask(Resource):
         record = search_question(question)
         if record is None:
             return "", 204
-        if userid is None:
-            return "", 401
-        sess.add_question(question, userid)
+        if userid is not None:
+            sess.add_question(question, userid)
         return {"answer": record["answer"]}
 
 
