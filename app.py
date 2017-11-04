@@ -16,6 +16,11 @@ api = Api(app)
 
 
 @app.route('/')
+def root():
+    return redirect("qaform")
+
+
+@app.route("/qaform")
 def qaform():
     return render_template('QAForm.html')
 
@@ -29,7 +34,7 @@ def submit_question():
     tags = form['tags'].split(' ')
     db.insert(question, answer, date, tags)
     db.commit()
-    return redirect(url_for("/"))
+    return redirect(url_for("qaform"))
 
 
 @app.route("/login", methods=["GET"])
