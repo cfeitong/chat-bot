@@ -29,7 +29,7 @@ def submit_question():
     tags = form['tags'].split(' ')
     db.insert(question, answer, date, tags)
     db.commit()
-    return redirect(url_for('hello'))
+    return redirect(url_for("/"))
 
 
 @app.route("/login", methods=["GET"])
