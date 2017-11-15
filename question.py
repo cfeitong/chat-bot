@@ -41,7 +41,7 @@ def load_questions():
 def search_question(question):
     qset = load_questions()
     entry_list = qset.match(question)
-    best: DataEntry = entry_list[0]
+    best = entry_list[0]
     return db[best.id]
     # return entry_list
 
