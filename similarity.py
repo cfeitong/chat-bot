@@ -34,7 +34,7 @@ class QuestionSet(object):
             for word in words:
                 try:
                     vec = self.model.wv[word]
-                    self.question_vectors[-1][0] += vec;
+                    self.question_vectors[-1][0] += vec
                 except KeyError:
                     words_part2.append(word)
             question_part2.append(words_part2)

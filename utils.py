@@ -4,15 +4,15 @@ from functools import wraps
 
 
 def call_once(func):
-    ret = None
-    has_run = False
+    store = {
+        "has_run": False,
+        "return": None,
+    }
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        nonlocal has_run
-        nonlocal ret
-        if not has_run:
-            has_run = True
-            ret = func(*args, **kwargs)
-        return ret
+        if not store["has_run"]:
+            store["has_run"] = True
+            store["return"] = func(*args, **kwargs)
+        return store["return"]
     return wrapper
