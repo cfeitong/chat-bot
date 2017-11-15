@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from resource import Ask, QAEntry, QAList
-from question import sess
+from gevent.wsgi import WSGIServer
 
 from flask import Flask, redirect, render_template, request, url_for
 from flask_restful import Api
 
 from db import db
+from question import sess
+from resource import Ask, QAEntry, QAList
 
 import json
 
@@ -58,4 +59,5 @@ api.add_resource(Ask, '/ask')
 
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", debug=True, threaded=True)
+    server = WSGIServer(('', 5000), app)
+    server.serve_forever()

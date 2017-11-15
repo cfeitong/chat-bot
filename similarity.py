@@ -1,5 +1,6 @@
 import jieba
 import numpy as np
+from gensim.models import Word2Vec
 from scipy import linalg
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -12,16 +13,41 @@ class QuestionSet(object):
         """\
         :param data: (list[NamedTuple]) list of questions ans answers
         """
+
         self.data = data
-        self.question_tokens = []
-        for entry in data:
-            self.question_tokens.append(" ".join(jieba.cut_for_search(entry.question)))
+        self.model = Word2Vec.load('model/word2vec_wx')
+        self.question_vectors = []
 
         with open("stopwords.txt", "rb") as f:
             stopwords = f.read().decode("utf-8")
-            stopwords = stopwords.split('\n')
-        self.vectorizer = TfidfVectorizer(max_df=1, stop_words=stopwords)
-        self.vectorizer.fit(self.question_tokens)
+            self.stopwords = stopwords.split('\n')
+
+        self.question_tokens = []
+        question_part2 = []
+        for entry in data:
+            words = jieba.cut_for_search(entry.question)
+            words = list(filter(lambda word: word not in self.stopwords, words))
+            self.question_tokens.append(words)
+
+            self.question_vectors.append([np.zeros([1, 256])])
+            words_part2 = [] # words that can not fit in word2vec pretrained model
+            for word in words:
+                try:
+                    vec = self.model.wv[word]
+                    self.question_vectors[-1][0] += vec;
+                except KeyError:
+                    words_part2.append(word)
+            question_part2.append(words_part2)
+
+
+        self.vectorizer = TfidfVectorizer(max_df=1)
+        questions = map(lambda tokens: " ".join(tokens), self.question_tokens)
+        self.vectorizer.fit(list(questions))
+
+        for question_token, question_vec in zip(question_part2, self.question_vectors):
+            vec = self.vectorizer.transform([" ".join(question_token)]).toarray()[0]
+            question_vec.append(vec)
+
 
     def match(self, question):
         """\
@@ -29,10 +55,21 @@ class QuestionSet(object):
         :return: answers sorted by possibility whether correct
         :rtype: list[string]
         """
-        tokens = " ".join(jieba.cut_for_search(question))
-        vec0 = self.vectorizer.transform([tokens]).toarray()[0]
-        distances = [_distance(vec0, vec1)
-                     for vec1 in self.vectorizer.transform(self.question_tokens).toarray()]
+        words = jieba.cut_for_search(question)
+        words = list(filter(lambda word: word not in self.stopwords, words))
+        vec00 = np.zeros([1, 256])
+
+        words_part2 = []
+        for word in words:
+            try:
+                vec00 += self.model.wv[word]
+            except KeyError:
+                words_part2.append(word)
+
+        vec01 = self.vectorizer.transform([" ".join(words_part2)]).toarray()[0]
+
+        distances = [_distance(vec00, vec10) + _distance(vec01, vec11)
+                     for vec10, vec11 in self.question_vectors]
         distances = np.array(distances)
         index = np.argsort(distances)
         return [self.data[idx] for idx in index]
