@@ -41,7 +41,7 @@ class QuestionSet(object):
 
 
         self.vectorizer = TfidfVectorizer(max_df=1)
-        questions = map(lambda tokens: " ".join(tokens), self.question_tokens)
+        questions = map(" ".join, self.question_tokens)
         self.vectorizer.fit(list(questions))
 
         for question_token, question_vec in zip(question_part2, self.question_vectors):
@@ -71,8 +71,12 @@ class QuestionSet(object):
         distances = [_distance(vec00, vec10) + _distance(vec01, vec11)
                      for vec10, vec11 in self.question_vectors]
         distances = np.array(distances)
-        index = np.argsort(distances)
-        return [self.data[idx] for idx in index]
+        std = np.std(distances)
+        mean = np.mean(distances)
+        min_idx = np.argmin(distances)
+        if len(self.data) < 30:
+            return self.data[min_idx]
+        return self.data[min_idx] if distances[min_idx] + std < mean else None
 
 
 def _distance(question_vec0, question_vec1):

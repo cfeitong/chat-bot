@@ -40,9 +40,11 @@ def load_questions():
 
 def search_question(question):
     qset = load_questions()
-    entry_list = qset.match(question)
-    best = entry_list[0]
-    return db[best.id]
+    entry = qset.match(question)
+    if entry:
+        return db[entry.id]
+    else:
+        return None
     # return entry_list
 
 

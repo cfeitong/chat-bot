@@ -6,6 +6,7 @@ from flask_restful import Api, Resource
 
 from db import db
 from question import search_question, sess
+from tuling import send_question
 
 
 class Ask(Resource):
@@ -15,7 +16,8 @@ class Ask(Resource):
         userid = args.get("userid", None)
         record = search_question(question)
         if record is None:
-            return "", 204
+            response = send_question(question, userid)
+            return {"answer": response["text"]}
         if userid is not None:
             sess.add_question(question, userid)
         return {"answer": record["answer"]}
