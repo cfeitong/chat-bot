@@ -1,9 +1,7 @@
 from utils import call_once
 from db import db
-from similarity import QuestionSet
 from collections import namedtuple, defaultdict
 
-DataEntry = namedtuple("DataEntry", ["id", "question"])
 
 
 class ChatSession(object):
@@ -29,23 +27,6 @@ class ChatSession(object):
     def add_question(self, question, userid):
         self.context[userid].append(question)
 
-
-@call_once
-def load_questions():
-    entries = [DataEntry(id=entry["__id__"], question=entry["question"])
-               for entry in db]
-    qset = QuestionSet(entries)
-    return qset
-
-
-def search_question(question):
-    qset = load_questions()
-    entry = qset.match(question)
-    if entry:
-        return db[entry.id]
-    else:
-        return None
-    # return entry_list
 
 
 sess = ChatSession()

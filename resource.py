@@ -1,12 +1,13 @@
 import json
-import urllib.parse
 
+import requests as rq
 from flask import Flask, redirect, render_template, request, url_for
 from flask_restful import Api, Resource
 
 from db import db
-from question import search_question, sess
+from question import sess
 from tuling import send_question
+from get_weather import try_weather
 
 
 class Ask(Resource):
@@ -14,7 +15,15 @@ class Ask(Resource):
         args = request.args
         question = args.get("question", None)
         userid = args.get("userid", None)
-        record = search_question(question)
+        weather = try_weather(question)
+        if weather is not None:
+            return {"answer": str(weather)}
+
+        response = rq.get("http://127.0.0.1:1121/question?question={}".format(question))
+        if response.status_code != 200:
+            raise ConnectionError("similarity server not started")
+        record = json.loads(response.text)
+
         if record is None:
             response = send_question(question, userid)
             return {"answer": response["text"]}

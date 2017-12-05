@@ -4,6 +4,7 @@ from gensim.models import Word2Vec
 from scipy import linalg
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+from get_weather import Weather
 
 jieba.load_userdict("userdict.txt")
 
@@ -57,6 +58,7 @@ class QuestionSet(object):
         """
         words = jieba.cut_for_search(question)
         words = list(filter(lambda word: word not in self.stopwords, words))
+
         vec00 = np.zeros([1, 256])
 
         words_part2 = []
@@ -68,15 +70,13 @@ class QuestionSet(object):
 
         vec01 = self.vectorizer.transform([" ".join(words_part2)]).toarray()[0]
 
-        distances = [_distance(vec00, vec10) + _distance(vec01, vec11)
+        distances = [_distance(vec00.reshape(-1), vec10.reshape(-1)) + 1*_distance(vec01, vec11)
                      for vec10, vec11 in self.question_vectors]
         distances = np.array(distances)
         std = np.std(distances)
         mean = np.mean(distances)
-        min_idx = np.argmin(distances)
-        if len(self.data) < 30:
-            return self.data[min_idx]
-        return self.data[min_idx] if distances[min_idx] + std < mean else None
+        idx = np.argmax(distances)
+        return self.data[idx] if distances[idx] - std > mean else None
 
 
 def _distance(question_vec0, question_vec1):
@@ -95,17 +95,44 @@ def _distance(question_vec0, question_vec1):
     if np.sum(np.abs(question_vec1)):
         q1_norm = question_vec1 / linalg.norm(question_vec1)
 
-    delta = q0_norm - q1_norm
-    return np.sum(np.abs(delta))
+    return np.dot(q0_norm, q1_norm)
 
 
 if __name__ == "__main__":
+    from flask import Flask, request
+    from utils import call_once
     from collections import namedtuple
+    from db import db
+    import json
 
-    Data = namedtuple("Data", ["question", "answer"])
-    texts = ["这是一篇关于机器学习的文章，实际上它没有多少有趣的东西。", "图像数据库会变得非常巨大。", "大多数图像数据库可以永久存储图像。", "图像数据库可以存储图像。",
-             "图像数据库可以存储图像。图像数据库可以存储图像。图像数据库可以存储图像。"]
-    data = [Data(v, i) for i, v in enumerate(texts)]
-    qs = QuestionSet(data)
-    ans = qs.match("这是一篇机器学习相关的文章，它不太有趣。")
-    print(ans)
+    DataEntry = namedtuple("DataEntry", ["id", "question"])
+
+    @call_once
+    def load_questions():
+        entries = [DataEntry(id=entry["__id__"], question=entry["question"])
+                for entry in db]
+        qset = QuestionSet(entries)
+        return qset
+
+
+    def search_question(question):
+        qset = load_questions()
+        entry = qset.match(question)
+        if entry:
+            return db[entry.id]
+        else:
+            return None
+        # return entry_list
+
+    app = Flask(__name__)
+    qset = load_questions()
+
+    @app.route("/question")
+    def match_question():
+        args = request.args
+        question = json.loads(args.get("question", None))
+        if question is not None:
+            return json.dumps(search_question(question))
+
+    app.run(port=1121)
+

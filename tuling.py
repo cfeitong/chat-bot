@@ -14,5 +14,4 @@ def send_question(question, userid):
     if userid:
         data["userid"] = str(userid)
     response = rq.post(API_URL, data=data)
-    print(response.text)
     return json.loads(response.text)
