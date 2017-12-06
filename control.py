@@ -1,6 +1,19 @@
 import requests
 import json
 
+"""
+In this file I decide to rewrite the entry of the chatbot, and it has following steps:
+S1. Extract the entities and classify the intent of the seq, current I use LUIS
+S2. According to the intent and entities, Program need to store or refresh the intent
+and entities from last conversation, in order to realize context chatting
+S3. For different intent, I use different func to return the answer
+e.g: intent: 'None'， call get_FreeTalk() (use tuling machine)
+     intent: '查询天气', call get_Weather()
+     ...
+     intent: '学校问题', call get_UESTC() to query database, we have already dealt with it
+
+response() is the entry func of this class, it receive a seq and return an ans
+"""
 class ChatSession(object):
     def __init__(self):
         self.intent = None
