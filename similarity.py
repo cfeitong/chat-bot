@@ -73,10 +73,9 @@ class QuestionSet(object):
         distances = [_distance(vec00.reshape(-1), vec10.reshape(-1)) + 1*_distance(vec01, vec11)
                      for vec10, vec11 in self.question_vectors]
         distances = np.array(distances)
-        std = np.std(distances)
-        mean = np.mean(distances)
         idx = np.argmax(distances)
-        return self.data[idx] if distances[idx] - std > mean else None
+        # do not need to judge here
+        return self.data[idx]
 
 
 def _distance(question_vec0, question_vec1):
