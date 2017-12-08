@@ -1,9 +1,20 @@
 import requests
 import json
 import tuling
-from utils import call_once
-from collections import namedtuple
 from get_weather import Weather
+from similarity import QuestionSet
+
+"""
+ChatSession need four initial parameter:
+    UESTC_QA: An object of QuestionSet control the QA pair in the database
+    Weather: An object of Weather, used for querying weather
+    Ticket: Not write, used for querying price
+    FreeTalk: for open area talk
+
+response() is the entry func of this class, it receive a seq and return an ans
+
+"""
+
 
 """
 In this file I decide to rewrite the entry of the chatbot, and it has following steps:
@@ -15,11 +26,9 @@ e.g: intent: 'None'， call get_FreeTalk() (use tuling machine)
      intent: '查询天气', call get_Weather()
      ...
      intent: '学校问题', call get_UESTC() to query database, we have already dealt with it
-
-response() is the entry func of this class, it receive a seq and return an ans
 """
 class ChatSession(object):
-    def __init__(self):
+    def __init__(self, UESTC_QA, Weather, Ticket, FreeTalk):
         self.intent = 'None'
         # entities is a dict, { 'type': [ value] }
         self.entities = {}
@@ -27,11 +36,13 @@ class ChatSession(object):
         self.url = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/a00658e3-a161-47d0-b29e-b73e5efe42bb?subscription-key=db06809c4cf54d028abebbe5da08b92f&verbose=true&timezoneOffset=480&q='
 
         # weather class, used for weather question
-        self.weather = None
+        self.weather = Weather
         # quesitones in database, used for uestc question
-        self.UESTC_QA = None
+        self.UESTC_QA = UESTC_QA
         # price question
-        self.ticket = None
+        self.ticket = Ticket
+
+        self.freetalk = FreeTalk
 
     # get a seq, and return the response
     def response(self, sentence):
@@ -96,10 +107,10 @@ class ChatSession(object):
     # function for specfic intent
 
     def get_UESTC(self, sentence):
-        # TODO: Fix this function
-
-        print('Query from database!')
-        return 1
+        if self.UESTC_QA == None:
+            raise ValueError("QuestionSet class is not instantiated!")
+        ans = self.UESTC_QA.match(sentence)
+        return ans[1]
 
     def get_Weather(self, places, time):
         if self.weather == None:
@@ -111,6 +122,7 @@ class ChatSession(object):
         return self.weather.get_weather()
 
     def get_Ticket(self, places, time):
+        # TODO: Fix this function
         print('Querying the ticket from ' + places[0] + ' to ' + places[1])
         return 3
 
@@ -120,17 +132,37 @@ class ChatSession(object):
         return r['text']
 
 
-
-
-
 if __name__ == "__main__":
-    A = ChatSession()
 
+    # Prepare database
+    from collections import namedtuple
+    Data = namedtuple("Data", ["question", "answer"])
+    with open('question.txt', 'rb') as f:
+        content = f.read().decode("utf-8")
+        text = content.split('\n')
+    texts = []
+    for i in text:
+        if i != "":
+            texts.append(i)
+    data = [Data(v, i) for i, v in enumerate(texts)]
+
+    QA = QuestionSet(data)
+    Weather = Weather()
+
+    Chatbot = ChatSession(QA, Weather, None, None)
+
+    ans = Chatbot.get_UESTC("电子科大的历史")
+    print(ans)
+    '''
     while True:
         seq = input('Please enter your question(# to qiut)')
         if seq == '#':
             break
-        print(A.response(seq))
+        print(Chatbot.response(seq))
+
+    '''
+
+
 
 
 
