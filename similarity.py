@@ -26,12 +26,13 @@ class QuestionSet(object):
         self.question_tokens = []
         question_part2 = []
         for entry in data:
-            words = jieba.cut_for_search(entry.question)
-            words = list(filter(lambda word: word not in self.stopwords, words))
+            words = jieba.cut_for_search(entry[0])
+            words = list(
+                filter(lambda word: word not in self.stopwords, words))
             self.question_tokens.append(words)
 
             self.question_vectors.append([np.zeros([1, 256])])
-            words_part2 = [] # words that can not fit in word2vec pretrained model
+            words_part2 = []  # words that can not fit in word2vec pretrained model
             for word in words:
                 try:
                     vec = self.model.wv[word]
@@ -40,15 +41,14 @@ class QuestionSet(object):
                     words_part2.append(word)
             question_part2.append(words_part2)
 
-
         self.vectorizer = TfidfVectorizer(max_df=1)
         questions = map(" ".join, self.question_tokens)
         self.vectorizer.fit(list(questions))
 
         for question_token, question_vec in zip(question_part2, self.question_vectors):
-            vec = self.vectorizer.transform([" ".join(question_token)]).toarray()[0]
+            vec = self.vectorizer.transform(
+                [" ".join(question_token)]).toarray()[0]
             question_vec.append(vec)
-
 
     def match(self, question):
         """\
@@ -70,7 +70,7 @@ class QuestionSet(object):
 
         vec01 = self.vectorizer.transform([" ".join(words_part2)]).toarray()[0]
 
-        distances = [_distance(vec00.reshape(-1), vec10.reshape(-1)) + 1*_distance(vec01, vec11)
+        distances = [_distance(vec00.reshape(-1), vec10.reshape(-1)) + 1 * _distance(vec01, vec11)
                      for vec10, vec11 in self.question_vectors]
         distances = np.array(distances)
         idx = np.argmax(distances)
@@ -97,31 +97,23 @@ def _distance(question_vec0, question_vec1):
     return np.dot(q0_norm, q1_norm)
 
 
-if __name__ == "__main__":
+def main():
     from flask import Flask, request
     from utils import call_once
     from collections import namedtuple
-    from db import db
+    import sqlite_api as sql
     import json
-
-    DataEntry = namedtuple("DataEntry", ["id", "question"])
 
     @call_once
     def load_questions():
-        entries = [DataEntry(id=entry["__id__"], question=entry["question"])
-                for entry in db]
+        entries = [entry for entry in sql.select("question,answer")]
         qset = QuestionSet(entries)
         return qset
-
 
     def search_question(question):
         qset = load_questions()
         entry = qset.match(question)
-        if entry:
-            return db[entry.id]
-        else:
-            return None
-        # return entry_list
+        return entry
 
     app = Flask(__name__)
     qset = load_questions()
@@ -135,3 +127,6 @@ if __name__ == "__main__":
 
     app.run(port=1121)
 
+
+if __name__ == "__main__":
+    main()

@@ -1,7 +1,5 @@
 from utils import call_once
-from db import db
 from collections import namedtuple, defaultdict
-
 
 
 class ChatSession(object):
@@ -26,7 +24,6 @@ class ChatSession(object):
 
     def add_question(self, question, userid):
         self.context[userid].append(question)
-
 
 
 sess = ChatSession()

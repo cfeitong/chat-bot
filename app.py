@@ -1,41 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import json
+
+import requests as rq
+from flask import Flask, redirect, render_template, request, url_for
+from flask_restful import Api, Resource
 from gevent.wsgi import WSGIServer
 
-from flask import Flask, redirect, render_template, request, url_for
-from flask_restful import Api
-
-from db import db
+import tuling
+from get_weather import try_weather
 from question import sess
-from resource import Ask, QAEntry, QAList
 
-import json
+
+class Ask(Resource):
+    def get(self):
+        args = request.args
+        question = args.get("question", None)
+        userid = args.get("userid", None)
+        weather = try_weather(question)
+        if weather is not None:
+            return {"answer": str(weather)}
+
+        response = rq.get(
+            "http://127.0.0.1:1121/question?question={}".format(question))
+        if response.status_code != 200:
+            raise ConnectionError("similarity server not started")
+        record = json.loads(response.text)
+
+        if record is None:
+            response = tuling.send_question(question, userid)
+            return {"answer": response["text"]}
+        if userid is not None:
+            sess.add_question(question, userid)
+        return {"answer": record[1]}
+
 
 app = Flask(__name__)
 api = Api(app)
-
-
-@app.route('/')
-def root():
-    return redirect("qaform")
-
-
-@app.route("/qaform")
-def qaform():
-    return render_template('QAForm.html')
-
-
-@app.route('/submit_question', methods=['POST'])
-def submit_question():
-    form = request.form
-    question = form['question']
-    answer = form['answer']
-    date = form['date']
-    tags = form['tags'].split(' ')
-    db.insert(question, answer, date, tags)
-    db.commit()
-    return redirect(url_for("qaform"))
 
 
 @app.route("/login", methods=["GET"])
@@ -53,8 +55,6 @@ def logout():
     return "", 200
 
 
-api.add_resource(QAList, '/qalist')
-api.add_resource(QAEntry, '/qalist/<int:id_>')
 api.add_resource(Ask, '/ask')
 
 

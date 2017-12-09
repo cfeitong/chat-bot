@@ -27,6 +27,8 @@ e.g: intent: 'None'， call get_FreeTalk() (use tuling machine)
      ...
      intent: '学校问题', call get_UESTC() to query database, we have already dealt with it
 """
+
+
 class ChatSession(object):
     def __init__(self, UESTC_QA, Weather, Ticket, FreeTalk):
         self.intent = 'None'
@@ -81,7 +83,7 @@ class ChatSession(object):
         target_url = self.url + sentence
         r = requests.get(target_url)
         r = json.loads(r.text)
-        #print(r)
+        # print(r)
         intent = r['topScoringIntent']['intent']
         entities_list = r['entities']
         entities = {}
@@ -102,7 +104,6 @@ class ChatSession(object):
             if item not in new_entities:
                 similar = False
         return similar
-
 
     # function for specfic intent
 
@@ -132,8 +133,7 @@ class ChatSession(object):
         return r['text']
 
 
-if __name__ == "__main__":
-
+def main():
     # Prepare database
     from collections import namedtuple
     Data = namedtuple("Data", ["question", "answer"])
@@ -147,9 +147,9 @@ if __name__ == "__main__":
     data = [Data(v, i) for i, v in enumerate(texts)]
 
     QA = QuestionSet(data)
-    Weather = Weather()
+    weather = Weather()
 
-    Chatbot = ChatSession(QA, Weather, None, None)
+    Chatbot = ChatSession(QA, weather, None, None)
 
     ans = Chatbot.get_UESTC("电子科大的历史")
     print(ans)
@@ -163,6 +163,5 @@ if __name__ == "__main__":
     '''
 
 
-
-
-
+if __name__ == "__main__":
+    main()
