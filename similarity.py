@@ -1,3 +1,4 @@
+from collections import namedtuple
 import jieba
 import numpy as np
 from gensim.models import Word2Vec
@@ -8,6 +9,7 @@ from get_weather import Weather
 
 jieba.load_userdict("userdict.txt")
 
+QAData = namedtuple("Data", ["question", "answer"])
 
 class QuestionSet(object):
     def __init__(self, data):
@@ -26,7 +28,7 @@ class QuestionSet(object):
         self.question_tokens = []
         question_part2 = []
         for entry in data:
-            words = jieba.cut_for_search(entry[0])
+            words = jieba.cut_for_search(entry.question)
             words = list(
                 filter(lambda word: word not in self.stopwords, words))
             self.question_tokens.append(words)
@@ -106,7 +108,7 @@ def main():
 
     @call_once
     def load_questions():
-        entries = [entry for entry in sql.select("question,answer")]
+        entries = [QAData(entry[0], entry[1]) for entry in sql.select("question,answer")]
         qset = QuestionSet(entries)
         return qset
 
