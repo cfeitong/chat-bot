@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import multiprocessing as mp
 
 import requests as rq
 from flask import Flask, redirect, render_template, request, url_for
@@ -11,6 +12,7 @@ from gevent.wsgi import WSGIServer
 import tuling
 from get_weather import try_weather
 from question import sess
+from similarity import run_similarity_server
 
 
 class Ask(Resource):
@@ -59,5 +61,10 @@ api.add_resource(Ask, '/ask')
 
 
 if __name__ == "__main__":
-    server = WSGIServer(('', 5000), app)
-    server.serve_forever()
+    similarity_server = mp.Process(target=run_similarity_server)
+    similarity_server.start()
+    app_server = WSGIServer(('', 5000), app)
+    try:
+        app_server.serve_forever()
+    finally:
+        similarity_server.terminate()

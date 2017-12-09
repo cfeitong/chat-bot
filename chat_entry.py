@@ -1,36 +1,37 @@
-import requests
-import json
-import tuling
-from get_weather import Weather
-from similarity import QuestionSet
-
-"""
-ChatSession need four initial parameter:
-    UESTC_QA: An object of QuestionSet control the QA pair in the database
-    Weather: An object of Weather, used for querying weather
-    Ticket: Not write, used for querying price
-    FreeTalk: for open area talk
-
-response() is the entry func of this class, it receive a seq and return an ans
-
-"""
-
-
 """
 In this file I decide to rewrite the entry of the chatbot, and it has following steps:
 S1. Extract the entities and classify the intent of the seq, current I use LUIS
 S2. According to the intent and entities, Program need to store or refresh the intent
 and entities from last conversation, in order to realize context chatting
 S3. For different intent, I use different func to return the answer
-e.g: intent: 'None'， call get_FreeTalk() (use tuling machine)
-     intent: '查询天气', call get_Weather()
+e.g: intent: 'None'， call get_freetalk() (use tuling machine)
+     intent: '查询天气', call get_weather()
      ...
-     intent: '学校问题', call get_UESTC() to query database, we have already dealt with it
+     intent: '学校问题', call get_uestc() to query database, we have already dealt with it
 """
+
+import json
+
+import requests
+
+import tuling
+from get_weather import Weather
+from similarity import QuestionSet
 
 
 class ChatSession(object):
-    def __init__(self, UESTC_QA, Weather, Ticket, FreeTalk):
+    """
+    ChatSession need four initial parameter:
+        uestc_qa: An object of QuestionSet control the QA pair in the database
+        weather: An object of Weather, used for querying weather
+        ticket: Not write, used for querying price
+        freetalk: for open area talk
+
+    response() is the entry func of this class, it receive a seq and return an ans
+
+    """
+
+    def __init__(self, uestc_qa, weather, ticket, freetalk):
         self.intent = 'None'
         # entities is a dict, { 'type': [ value] }
         self.entities = {}
@@ -38,17 +39,17 @@ class ChatSession(object):
         self.url = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/a00658e3-a161-47d0-b29e-b73e5efe42bb?subscription-key=db06809c4cf54d028abebbe5da08b92f&verbose=true&timezoneOffset=480&q='
 
         # weather class, used for weather question
-        self.weather = Weather
+        self.weather = weather
         # quesitones in database, used for uestc question
-        self.UESTC_QA = UESTC_QA
+        self.uestc_qa = uestc_qa
         # price question
-        self.ticket = Ticket
+        self.ticket = ticket
 
-        self.freetalk = FreeTalk
+        self.freetalk = freetalk
 
     # get a seq, and return the response
     def response(self, sentence):
-        new_intent, new_entities = self.get_IntentEntities(sentence)
+        new_intent, new_entities = self.get_intententities(sentence)
         if not new_intent == 'None':
             self.intent = new_intent
             self.entities = new_entities
@@ -60,26 +61,26 @@ class ChatSession(object):
                 self.entities = new_entities
 
         if self.intent == 'None':
-            return self.get_FreeTalk(sentence)
+            return self.get_freetalk(sentence)
         elif self.intent == '查询天气':
-            places = self.get_EntityValue('地点')
-            time = self.get_EntityValue('datetimeV2')
-            return self.get_Weather(places, time)
+            places = self.get_entityvalue('地点')
+            time = self.get_entityvalue('datetimeV2')
+            return self.get_weather(places, time)
         elif self.intent == '查询票价':
-            places = self.get_EntityValue('地点')
-            time = self.get_EntityValue('datetimeV2')
-            return self.get_Ticket(places, time)
+            places = self.get_entityvalue('地点')
+            time = self.get_entityvalue('datetimev2')
+            return self.get_ticket(places, time)
         else:
-            return self.get_UESTC(sentence)
+            return self.get_uestc(sentence)
 
-    def get_EntityValue(self, entity):
+    def get_entityvalue(self, entity):
         if entity in self.entities:
             return self.entities[entity]
         else:
             return None
 
     # get intent and entities from 'sentence'
-    def get_IntentEntities(self, sentence):
+    def get_intententities(self, sentence):
         target_url = self.url + sentence
         r = requests.get(target_url)
         r = json.loads(r.text)
@@ -107,14 +108,14 @@ class ChatSession(object):
 
     # function for specfic intent
 
-    def get_UESTC(self, sentence):
-        if self.UESTC_QA == None:
+    def get_uestc(self, sentence):
+        if self.uestc_qa is None:
             raise ValueError("QuestionSet class is not instantiated!")
-        ans = self.UESTC_QA.match(sentence)
+        ans = self.uestc_qa.match(sentence)
         return ans[1]
 
-    def get_Weather(self, places, time):
-        if self.weather == None:
+    def get_weather(self, places, time):
+        if self.weather is None:
             self.weather = Weather()
 
         city = places[0]
@@ -122,12 +123,12 @@ class ChatSession(object):
         self.weather.put('天气')
         return self.weather.get_weather()
 
-    def get_Ticket(self, places, time):
+    def get_ticket(self, places, time):
         # TODO: Fix this function
         print('Querying the ticket from ' + places[0] + ' to ' + places[1])
         return 3
 
-    def get_FreeTalk(self, sentence):
+    def get_freetalk(self, sentence):
         print('Tuling machine')
         r = tuling.send_question(sentence, None)
         return r['text']
@@ -149,9 +150,9 @@ def main():
     QA = QuestionSet(data)
     weather = Weather()
 
-    Chatbot = ChatSession(QA, weather, None, None)
+    chatbot = ChatSession(QA, weather, None, None)
 
-    ans = Chatbot.get_UESTC("电子科大的历史")
+    ans = chatbot.get_uestc("电子科大的历史")
     print(ans)
     '''
     while True:

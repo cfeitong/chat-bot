@@ -1,5 +1,4 @@
-from utils import call_once
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 
 
 class ChatSession(object):

@@ -99,7 +99,7 @@ def _distance(question_vec0, question_vec1):
     return np.dot(q0_norm, q1_norm)
 
 
-def main():
+def run_similarity_server():
     from flask import Flask, request
     from utils import call_once
     from collections import namedtuple
@@ -131,4 +131,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_similarity_server()
