@@ -11,27 +11,30 @@ e.g: intent: 'None'， call get_freetalk() (use tuling machine)
 """
 
 import json
+from collections import namedtuple
 
 import requests
 
 import tuling
 from get_weather import Weather
 from similarity import QuestionSet
+import sqlite_api as sql
 
 
 class ChatSession(object):
     """
-    ChatSession need four initial parameter:
-        uestc_qa: An object of QuestionSet control the QA pair in the database
-        weather: An object of Weather, used for querying weather
-        ticket: Not write, used for querying price
-        freetalk: for open area talk
-
     response() is the entry func of this class, it receive a seq and return an ans
 
     """
 
     def __init__(self, uestc_qa, weather, ticket, freetalk):
+        """\
+        Args:
+            uestc_qa: An object of QuestionSet control the QA pair in the database
+            weather: An object of Weather, used for querying weather
+            ticket: Not write, used for querying price
+            freetalk: for open area talk
+        """
         self.intent = 'None'
         # entities is a dict, { 'type': [ value] }
         self.entities = {}
@@ -50,7 +53,7 @@ class ChatSession(object):
     # get a seq, and return the response
     def response(self, sentence):
         new_intent, new_entities = self.get_intententities(sentence)
-        if not new_intent == 'None':
+        if new_intent != 'None':
             self.intent = new_intent
             self.entities = new_entities
         else:
@@ -133,19 +136,23 @@ class ChatSession(object):
         r = tuling.send_question(sentence, None)
         return r['text']
 
+Data = namedtuple("Data", ["question", "answer"])
+texts = sql.select("question, answer")
+data = [Data(q, a) for q, a in texts]
+
+QA = QuestionSet(data)
+weather = Weather()
+
+sess = ChatSession(QA, weather, None, None)
+
 
 def main():
     # Prepare database
     from collections import namedtuple
+    import sqlite_api as sql
     Data = namedtuple("Data", ["question", "answer"])
-    with open('question.txt', 'rb') as f:
-        content = f.read().decode("utf-8")
-        text = content.split('\n')
-    texts = []
-    for i in text:
-        if i != "":
-            texts.append(i)
-    data = [Data(v, i) for i, v in enumerate(texts)]
+    texts = sql.select("question, answer")
+    data = [Data(q, a) for q, a in texts]
 
     QA = QuestionSet(data)
     weather = Weather()
@@ -154,14 +161,11 @@ def main():
 
     ans = chatbot.get_uestc("电子科大的历史")
     print(ans)
-    '''
     while True:
         seq = input('Please enter your question(# to qiut)')
         if seq == '#':
             break
-        print(Chatbot.response(seq))
-
-    '''
+        print(chatbot.response(seq))
 
 
 if __name__ == "__main__":

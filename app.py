@@ -11,7 +11,7 @@ from gevent.wsgi import WSGIServer
 
 import tuling
 from get_weather import try_weather
-from question import sess
+from chat_entry import sess
 from similarity import run_similarity_server
 
 
@@ -20,22 +20,10 @@ class Ask(Resource):
         args = request.args
         question = args.get("question", None)
         userid = args.get("userid", None)
-        weather = try_weather(question)
-        if weather is not None:
-            return {"answer": str(weather)}
 
-        response = rq.get(
-            "http://127.0.0.1:1121/question?question={}".format(question))
-        if response.status_code != 200:
-            raise ConnectionError("similarity server not started")
-        record = json.loads(response.text)
+        response = sess.response(question)
 
-        if record is None:
-            response = tuling.send_question(question, userid)
-            return {"answer": response["text"]}
-        if userid is not None:
-            sess.add_question(question, userid)
-        return {"answer": record[1]}
+        return {"answer": response}
 
 
 app = Flask(__name__)
@@ -61,10 +49,5 @@ api.add_resource(Ask, '/ask')
 
 
 if __name__ == "__main__":
-    similarity_server = mp.Process(target=run_similarity_server)
-    similarity_server.start()
     app_server = WSGIServer(('', 5000), app)
-    try:
-        app_server.serve_forever()
-    finally:
-        similarity_server.terminate()
+    app_server.serve_forever()
